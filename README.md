@@ -4,6 +4,8 @@ Fractal Viewer is project for rendering and interacting with fractals directly i
 
 # Dependencies
 
+* rustup
+* rust wasm32-unknown-unknown
 * wasm-pack
 * npm
 

@@ -5,47 +5,27 @@ const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
 const canvas = document.getElementById("fractal-canvas");
-let width = canvas.clientWidth;
-let height = canvas.clientHeight;
+let width = window.innerWidth;
+let height = window.innerHeight;
+canvas.width = width;
+canvas.height = height;
 
 window.onresize = function() {
-  console.log("resized");
-  width = canvas.clientWidth;
-  height = canvas.clientHeight;
-  requestAnimationFrame(render);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    requestAnimationFrame(render);
 }
 
 const render = () => {
-  console.log("rendering fractal");
-  const getIndex = (row, column) => {
-    return row * width + column;
-  };
+    const fractal = Fractal.mandelbrot(width,height);
+    const ctx = canvas.getContext('2d');
+    const pixels = new Uint8ClampedArray(memory.buffer, fractal.data(), width * height * 4);
 
-  const fractal = Fractal.mandelbrot(width,height);
-  const ctx = canvas.getContext('2d');
-  const pixels = new Uint8Array(memory.buffer, fractal.pixels(), width * height);
-
-  ctx.beginPath();
-
-  for (let row = 0; row < height; row++) {
-    for (let col = 0; col < width; col++) {
-      const idx = getIndex(row, col);
-
-      ctx.fillStyle = pixels[idx] === Pixel.Dead
-        ? DEAD_COLOR
-        : ALIVE_COLOR;
-
-      ctx.fillRect(
-        col,
-        row,
-        1,
-        1
-      );
-    }
-  }
-
-  ctx.stroke();
-
+    const imageData = new ImageData(pixels, width, height);
+    ctx.putImageData(imageData, 0, 0);
 };
 
 requestAnimationFrame(render);
