@@ -1,6 +1,5 @@
 mod utils;
 
-use rand::prelude::*;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -16,17 +15,23 @@ pub struct Fractal {
 
 #[wasm_bindgen]
 impl Fractal {
-    pub fn mandelbrot(width:usize, height:usize) -> Fractal {
-        const MAX_ITERATIONS:u32 = 80;
+    fn linear_interpolate(color1:[u8;4], color2:[u8;4], iterations:f64) -> [u8;4] {
+        [
+        (((color2[0] as f64 - color1[0] as f64) * iterations) * color1[0] as f64).floor() as u8,
+        (((color2[1] as f64 - color1[1] as f64) * iterations) * color1[1] as f64).floor() as u8,
+        (((color2[2] as f64 - color1[2] as f64) * iterations) * color1[2] as f64).floor() as u8,
+        255]
+    }
 
-        let mut rng = rand::thread_rng();
+    pub fn mandelbrot(width:usize, height:usize) -> Fractal {
+        utils::set_panic_hook();
+
+        const MAX_ITERATIONS:f64 = 80.0;
 
         let mut colors:Vec<[u8;4]> = Vec::with_capacity(MAX_ITERATIONS as usize);
-        for _n in 0..=MAX_ITERATIONS {
-            let r = (rng.gen::<f64>() * 255.0) as u8;
-            let g = (rng.gen::<f64>() * 255.0) as u8;
-            let b = (rng.gen::<f64>() * 255.0) as u8;
-            colors.push([r,g,b,255]);
+        for n in 0..=(MAX_ITERATIONS+1.0) as u8 {
+            let b = (n as f64/(MAX_ITERATIONS+1.0)) * 255.0;
+            colors.push([0,0,b.floor() as u8,255]);
         }
 
         colors[MAX_ITERATIONS as usize] = [0,0,0,255];
@@ -34,22 +39,32 @@ impl Fractal {
         let mut pixels: Vec<[u8;4]> = Vec::with_capacity(width*height*4);
 
         for py in 0..height {
-            let y0 = (py as f64 / height as f64) * (1.12*2.0) - 1.12; // -1.12, 1.12
+            let y0 = (py as f64 / height as f64) * (1.12*2.0) - 1.12;
 
             for px in 0..width {
-                let x0 = (px as f64 / width as f64) * 2.47 - 2.0; // -2.00, 0.47
-                let mut iteration = 0;
+                let x0 = (px as f64 / width as f64) * 2.47 - 2.0;
+                let mut iteration = 0.0;
                 let mut x = 0.0;
                 let mut y = 0.0;
 
-                while x*x + y*y <= 4.0 && iteration < MAX_ITERATIONS {
+                while x*x + y*y <= (1 << 16) as f64 && iteration < MAX_ITERATIONS {
                     let xtemp = x*x - y*y + x0;
                     y = 2.0*x*y + y0;
                     x = xtemp;
-                    iteration += 1;
+                    iteration += 1.0;
                 }
 
-                pixels.push(colors[iteration as usize]);
+                if iteration < MAX_ITERATIONS {
+                    let log_zn = (x*x + y*y).log10() / 2.0;
+                    let nu = (log_zn / 2.0_f64.log10()).log10() / 2.0_f64.log10();
+                    iteration = iteration + 1.0 - nu
+                }
+
+                let color1 = colors[iteration.floor() as usize];
+                let color2 = colors[(iteration.floor() + 1.0) as usize];
+                let color = Fractal::linear_interpolate(color1, color2, iteration % 1.0);
+
+                pixels.push(color);
             }
         }
 
