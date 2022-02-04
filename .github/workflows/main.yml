@@ -43,4 +43,6 @@ jobs:
         uses: crazy-max/ghaction-github-pages@v2.6.0
         with:
           build_dir: www/dist
+        env:
+          GH_PAT: ${{ secrets.PAT }}
         
