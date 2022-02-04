@@ -35,12 +35,10 @@ impl Fractal {
         colors
     }
 
-    pub fn mandelbrot(width:usize, height:usize, left:f64, top:f64, right:f64, bottom:f64) -> Fractal {
+    pub fn mandelbrot(max_iterations:f64,width:usize, height:usize, left:f64, top:f64, right:f64, bottom:f64) -> Fractal {
         utils::set_panic_hook();
 
-        const MAX_ITERATIONS:f64 = 80.0;
-
-        let palette = Fractal::get_palette(MAX_ITERATIONS as usize);
+        let palette = Fractal::get_palette(max_iterations as usize);
 
         let mut pixels: Vec<[u8;4]> = Vec::with_capacity(width*height*4);
 
@@ -53,14 +51,14 @@ impl Fractal {
                 let mut x = 0.0;
                 let mut y = 0.0;
 
-                while x*x + y*y <= (1 << 16) as f64 && iteration < MAX_ITERATIONS {
+                while x*x + y*y <= (1 << 16) as f64 && iteration < max_iterations {
                     let xtemp = x*x - y*y + x0;
                     y = 2.0*x*y + y0;
                     x = xtemp;
                     iteration += 1.0;
                 }
 
-                if iteration < MAX_ITERATIONS {
+                if iteration < max_iterations {
                     let log_zn = (x*x + y*y).log10() / 2.0;
                     let nu = (log_zn / 2.0_f64.log10()).log10() / 2.0_f64.log10();
                     iteration = iteration + 1.0 - nu
