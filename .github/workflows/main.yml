@@ -37,7 +37,7 @@ jobs:
         run: wasm-pack build
         
       - name: Run npm build
-        run: cd www && npm run build
+        run: cd www && npm install && npm run build
         
       - name: Deploy to GitHub Pages
         uses: crazy-max/ghaction-github-pages@v2.6.0
