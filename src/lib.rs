@@ -23,26 +23,32 @@ impl Fractal {
         255]
     }
 
-    pub fn mandelbrot(width:usize, height:usize) -> Fractal {
+    fn get_palette(iterations:usize) -> Vec<[u8;4]> {
+        let mut colors:Vec<[u8;4]> = Vec::with_capacity(iterations);
+        for n in 0..=iterations as u8 {
+            let b = (n as f64/iterations as f64) * 255.0;
+            colors.push([0,0,b.floor() as u8,255]);
+        }
+
+        colors.push([0,0,0,255]);
+
+        colors
+    }
+
+    pub fn mandelbrot(width:usize, height:usize, left:f64, top:f64, right:f64, bottom:f64) -> Fractal {
         utils::set_panic_hook();
 
         const MAX_ITERATIONS:f64 = 80.0;
 
-        let mut colors:Vec<[u8;4]> = Vec::with_capacity(MAX_ITERATIONS as usize);
-        for n in 0..=(MAX_ITERATIONS+1.0) as u8 {
-            let b = (n as f64/(MAX_ITERATIONS+1.0)) * 255.0;
-            colors.push([0,0,b.floor() as u8,255]);
-        }
-
-        colors[MAX_ITERATIONS as usize] = [0,0,0,255];
+        let palette = Fractal::get_palette(MAX_ITERATIONS as usize);
 
         let mut pixels: Vec<[u8;4]> = Vec::with_capacity(width*height*4);
 
         for py in 0..height {
-            let y0 = (py as f64 / height as f64) * (1.12*2.0) - 1.12;
+            let y0 = (py as f64 / height as f64) * (top*2.0) + bottom;
 
             for px in 0..width {
-                let x0 = (px as f64 / width as f64) * 2.47 - 2.0;
+                let x0 = (px as f64 / width as f64) * (left.abs() + right) + left;
                 let mut iteration = 0.0;
                 let mut x = 0.0;
                 let mut y = 0.0;
@@ -60,8 +66,8 @@ impl Fractal {
                     iteration = iteration + 1.0 - nu
                 }
 
-                let color1 = colors[iteration.floor() as usize];
-                let color2 = colors[(iteration.floor() + 1.0) as usize];
+                let color1 = palette[iteration.floor() as usize];
+                let color2 = palette[(iteration.floor() + 1.0) as usize];
                 let color = Fractal::linear_interpolate(color1, color2, iteration % 1.0);
 
                 pixels.push(color);
